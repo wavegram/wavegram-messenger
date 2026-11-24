@@ -4447,3 +4447,115 @@ html[data-theme="light"] .info-row--danger .info-row__chevron { color: #c8372f; 
 .msg__reply-quote { display: block; width: 100%; text-align: left; background: rgba(127,127,127,.08); border-left: 3px solid var(--accent, #1f9cf0); border-radius: 6px; padding: 4px 8px; margin-bottom: 4px; cursor: pointer; color: inherit; font: inherit; }
 .msg__reply-name { font-size: 12px; font-weight: 600; color: var(--accent, #1f9cf0); }
 .msg__reply-text { font-size: 12px; opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+
+/* ---------- Контекстное меню сообщения (долгое нажатие / правая кнопка) ---------- */
+
+.msg-ctxmenu {
+  position: fixed;
+  z-index: 200;
+  min-width: 220px;
+  background: var(--menu-bg, #fff);
+  border: 1px solid var(--line, rgba(127,127,127,.25));
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.28);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.msg-ctxmenu__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text, #222);
+  font-size: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.msg-ctxmenu__item:hover { background: var(--hover-strong, rgba(127,127,127,.14)); }
+.msg-ctxmenu__item svg { flex-shrink: 0; opacity: .75; }
+
+/* ---------- Поиск по чату ---------- */
+
+.chat__searchbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line, rgba(127,127,127,.2));
+  background: var(--panel, transparent);
+}
+
+.chat__searchbar[hidden] { display: none; }
+
+.chat__searchbar input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(127,127,127,.1);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--text, #222);
+  font: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.chat__search-count {
+  font-size: 12px;
+  color: var(--text-faint, #9299a2);
+  white-space: nowrap;
+}
+
+/* ---------- Стикеры ---------- */
+
+.sticker-panel {
+  display: flex;
+  flex-direction: column;
+  position: static;
+  max-height: min(45vh, 320px);
+  border-top: 1px solid var(--line, rgba(127,127,127,.2));
+  background: var(--panel, transparent);
+}
+
+.sticker-panel[hidden] { display: none; }
+
+.sticker-panel__grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px;
+  padding: 8px;
+}
+
+.sticker-panel__item {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: none;
+  background: rgba(127,127,127,.08);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 34px;
+  color: inherit;
+  padding: 4px;
+}
+
+.sticker-panel__item:hover { background: rgba(127,127,127,.16); }
+.sticker-panel__item img { width: 56px; height: 56px; object-fit: contain; }
+
+.attachment--sticker {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin: -4px 0;
+  cursor: pointer;
+}

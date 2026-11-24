@@ -211,6 +211,11 @@ const el = {
 
   messages: document.getElementById('messages'),
   messageList: document.getElementById('message-list'),
+  chatSearchBtn: document.getElementById('chat-search-btn'),
+  chatSearchBar: document.getElementById('chat-searchbar'),
+  chatSearchInput: document.getElementById('chat-search-input'),
+  chatSearchCount: document.getElementById('chat-search-count'),
+  chatSearchClose: document.getElementById('chat-search-close'),
   pinned: document.getElementById('pinned'),
   pinnedBody: document.getElementById('pinned-body'),
   pinnedLabel: document.getElementById('pinned-label'),
@@ -228,6 +233,8 @@ const el = {
   attachInput: document.getElementById('attach-input'),
   emojiBtn: document.getElementById('emoji-btn'),
   emojiPanel: document.getElementById('emoji-panel'),
+  stickerBtn: document.getElementById('sticker-btn'),
+  stickerPanel: document.getElementById('sticker-panel'),
   mentionPanel: document.getElementById('mention-panel'),
   recTimer: document.getElementById('rec-timer'),
   replyBar: document.getElementById('reply-bar'),
@@ -2559,10 +2566,12 @@ function updateHeader(chat) {
 
   setStatus(isDirect
     ? lastSeenText(peer)
-    : `${chat.memberCount} ${chat.kind === 'channel' ? 'подписчиков' : 'участников'}`);
+    : `${chat.memberCount} ${membersWord(chat.memberCount, chat.kind === 'channel')}`);
 
   el.chatLock.hidden = true;
   el.chatInfoBtn.hidden = isDirect;
+  el.chatSearchBtn.hidden = false;
+  closeChatSearch();
 }
 
 function setStatus(text, typing = false) {
@@ -2904,6 +2913,23 @@ async function appendBubble(message) {
   }
 
   attachReactions(bubble, message);
+
+  row.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    openMessageMenu(event.clientX, event.clientY, message, { own, isChannel, currentChat });
+  });
+  let longPressTimer = null;
+  row.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const x = event.clientX, y = event.clientY;
+    longPressTimer = setTimeout(() => {
+      openMessageMenu(x, y, message, { own, isChannel, currentChat });
+    }, 500);
+  });
+  const cancelLongPress = () => { clearTimeout(longPressTimer); };
+  row.addEventListener('pointerup', cancelLongPress);
+  row.addEventListener('pointermove', cancelLongPress);
+  row.addEventListener('pointerleave', cancelLongPress);
 
   row.append(bubble);
   el.messageList.append(row);
@@ -3537,6 +3563,20 @@ function renderAttachment(bubble, message) {
   const at = message.attachment || '';
   const dataUrl = mediaUrl(at);
 
+  if (kind === 'sticker') {
+    const img = document.createElement('img');
+    img.className = 'attachment attachment--sticker';
+    img.src = 'emoji/' + at + '.png';
+    img.alt = 'Стикер';
+    img.loading = 'lazy';
+    img.addEventListener('click', event => {
+      event.stopPropagation();
+      openFullscreen(img.src, 'image');
+    });
+    bubble.append(img);
+    return;
+  }
+
   if (kind === 'image') {
     const img = document.createElement('img');
     img.className = 'attachment attachment--image';
@@ -3854,6 +3894,70 @@ el.emojiBtn.addEventListener('click', () => {
 
 document.addEventListener('click', event => {
   if (!el.emojiPanel.hidden && !el.emojiPanel.contains(event.target) && !el.emojiBtn.contains(event.target)) {
+    el.emojiPanel.hidden = true;
+    el.emojiBtn.classList.remove('is-active');
+  }
+  if (!el.stickerPanel.hidden && !el.stickerPanel.contains(event.target) && !el.stickerBtn.contains(event.target)) {
+    el.stickerPanel.hidden = true;
+    el.stickerBtn.classList.remove('is-active');
+  }
+});
+
+const STICKER_SET = ['🔥','❤️','👍','😂','🥰','😎','🤔','😱','💯','🎉','🌚','❤️‍🔥','😈','🥶','💀','⭐','🎁','🍕'];
+
+function buildStickerPanel() {
+  if (el.stickerPanel.childElementCount) return;
+  const grid = document.createElement('div');
+  grid.className = 'sticker-panel__grid';
+  for (const emoji of STICKER_SET) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sticker-panel__item';
+    const code = EMOJI_FILE[emoji];
+    if (code) {
+      const img = document.createElement('img');
+      img.src = 'emoji/' + code + '.png';
+      img.alt = emoji;
+      img.loading = 'lazy';
+      btn.append(img);
+    } else {
+      btn.textContent = emoji;
+    }
+    btn.addEventListener('click', () => sendSticker(emoji));
+    grid.append(btn);
+  }
+  el.stickerPanel.append(grid);
+}
+
+function sendSticker(emoji) {
+  const chatId = state.currentChatId;
+  if (!chatId) return toast('Сначала выберите чат');
+  const chat = chatById(chatId);
+  if (!chat) return;
+  if (chat.kind === 'channel' && !chat.canManage) {
+    toast('В канале писать могут только администраторы');
+    return;
+  }
+  el.stickerPanel.hidden = true;
+  el.stickerBtn.classList.remove('is-active');
+  const code = EMOJI_FILE[emoji] || '';
+  const msg = { type: 'send', chatId, body: '', kind: 'sticker', attachment: code };
+  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+    state.ws.send(JSON.stringify(msg));
+  } else {
+    api(`/api/chats/${chatId}/messages`, { method: 'POST', body: { body: '', kind: 'sticker', attachment: code } })
+      .then(data => handleIncomingMessage(chatId, data.message))
+      .catch(error => toast(error.message));
+  }
+}
+
+el.stickerBtn.addEventListener('click', () => {
+  buildStickerPanel();
+  const willShow = el.stickerPanel.hidden;
+  if (willShow && !state.currentChatId) return toast('Сначала выберите чат');
+  el.stickerPanel.hidden = !willShow;
+  el.stickerBtn.classList.toggle('is-active', willShow);
+  if (willShow) {
     el.emojiPanel.hidden = true;
     el.emojiBtn.classList.remove('is-active');
   }
@@ -4454,6 +4558,19 @@ function commentWord(n) {
   return 'ев';
 }
 
+function pluralWord(n, forms) {
+  const last = n % 10;
+  const lastTwo = n % 100;
+  if (lastTwo >= 11 && lastTwo <= 14) return forms[2];
+  if (last === 1) return forms[0];
+  if (last >= 2 && last <= 4) return forms[1];
+  return forms[2];
+}
+
+function membersWord(n, isChannel) {
+  return pluralWord(n, isChannel ? ['подписчик', 'подписчика', 'подписчиков'] : ['участник', 'участника', 'участников']);
+}
+
 function createChatDialog(kind) {
   setMenu(false);
   const isChannel = kind === 'channel';
@@ -4602,7 +4719,7 @@ function openChannelProfile(chat) {
 
   const meta = document.createElement('div');
   meta.className = 'channel-profile__meta';
-  meta.textContent = `${chat.memberCount} ${isChannel ? 'подписчиков' : 'участников'}`;
+  meta.textContent = `${chat.memberCount} ${membersWord(chat.memberCount, isChannel)}`;
 
   head.append(avatar, name, meta);
   card.append(head);
@@ -4718,7 +4835,7 @@ function openChannelProfile(chat) {
   };
 
   stats.append(
-    stat('подписчиков', chat.memberCount),
+    stat(membersWord(chat.memberCount, true), chat.memberCount),
     stat('администраторов', chat.adminCount || 0)
   );
   card.append(stats);
@@ -4805,7 +4922,7 @@ function renderChatInfo() {
 
   const meta = document.createElement('div');
   meta.className = 'settings__username';
-  meta.textContent = `${chat.memberCount} ${chat.kind === 'channel' ? 'подписчиков' : 'участников'}`;
+  meta.textContent = `${chat.memberCount} ${membersWord(chat.memberCount, chat.kind === 'channel')}`;
 
   titles.append(name, meta);
   head.append(avatar, titles);
@@ -5248,6 +5365,33 @@ el.composeChannel.addEventListener('click', () => {
 
 el.chatInfoBtn.addEventListener('click', () => openChatInfo());
 el.chatInfoBack.addEventListener('click', closeChatInfo);
+
+el.chatSearchBtn.addEventListener('click', () => {
+  el.chatSearchBar.hidden = false;
+  el.chatSearchInput.focus();
+});
+el.chatSearchClose.addEventListener('click', closeChatSearch);
+el.chatSearchInput.addEventListener('input', () => {
+  const q = el.chatSearchInput.value.trim().toLowerCase();
+  let shown = 0, total = 0;
+  for (const row of el.messageList.querySelectorAll('.msg-row')) {
+    const text = (row.textContent || '').toLowerCase();
+    const match = !q || text.includes(q);
+    row.hidden = !match;
+    if (!row.hidden) shown++;
+    total++;
+  }
+  el.chatSearchCount.textContent = q && !shown ? 'Не найдено' : (q ? `${shown} из ${total}` : '');
+  const first = el.messageList.querySelector('.msg-row:not([hidden])');
+  if (q && first) first.scrollIntoView({ block: 'center' });
+});
+
+function closeChatSearch() {
+  el.chatSearchBar.hidden = true;
+  el.chatSearchInput.value = '';
+  el.chatSearchCount.textContent = '';
+  for (const row of el.messageList.querySelectorAll('.msg-row')) row.hidden = false;
+}
 
 /* ---------- Профиль ---------- */
 
@@ -7070,6 +7214,61 @@ el.chatTitles.addEventListener('keydown', event => {
 });
 
 /* ---------- Старт ---------- */
+
+function openMessageMenu(x, y, message, ctx) {
+  const old = document.querySelector('.msg-ctxmenu');
+  if (old) old.remove();
+
+  const own = Boolean(ctx.own);
+  const isChannel = Boolean(ctx.isChannel);
+  const currentChat = ctx.currentChat;
+  const canDelete = own || (currentChat && currentChat.canManage);
+  const canPin = Boolean(currentChat && currentChat.canManage && currentChat.kind !== 'direct');
+  const canEdit = own && !message.body.startsWith(E2E_PREFIX) && !isChannel;
+  const isPinned = currentChat && currentChat.pinnedMessageId === message.id;
+
+  const menu = document.createElement('div');
+  menu.className = 'msg-ctxmenu';
+  menu.style.left = Math.max(8, Math.min(x, window.innerWidth - 240)) + 'px';
+  menu.style.top = Math.max(8, Math.min(y, window.innerHeight - 260)) + 'px';
+
+  const item = (label, icon, fn) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'msg-ctxmenu__item';
+    b.innerHTML = icon + '<span>' + label + '</span>';
+    b.addEventListener('click', () => { menu.remove(); fn(); });
+    return b;
+  };
+
+  menu.append(item('Ответить', '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 10l7-6v4c7 0 11 3 11 9h-2c0-4-3-5-9-5v4l-7-6z" fill="currentColor"/></svg>', () => startReply(message)));
+  menu.append(item('Переслать', '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 12l16-8-6 8 6 8-16-8z" fill="currentColor"/></svg>', () => openForwardDialog(state.currentChatId, message)));
+  if (canEdit) {
+    menu.append(item('Редактировать', '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4l10-10a2.8 2.8 0 0 0-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>', () => startEdit(state.currentChatId, message)));
+  }
+  if (canPin) {
+    menu.append(item(isPinned ? 'Открепить' : 'Закрепить', '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 4l5 5-7 7H7l-4 4 4-4v-6l8-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>', async () => {
+      const next = isPinned ? null : message.id;
+      try {
+        await api(`/api/chats/${state.currentChatId}`, { method: 'PATCH', body: { pinnedMessageId: next } });
+        const chat = chatById(state.currentChatId);
+        if (chat) { chat.pinnedMessageId = next; chat.pinnedMessage = next ? message : null; }
+        renderPinned(chatById(state.currentChatId));
+        toast(isPinned ? 'Закрепление снято' : 'Сообщение закреплено');
+      } catch (error) { toast(error.message); }
+    }));
+  }
+  if (canDelete) {
+    menu.append(item('Удалить', '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M7 7l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>', () => deleteClientMessage(state.currentChatId, message)));
+  }
+
+  document.body.append(menu);
+  setTimeout(() => {
+    document.addEventListener('pointerdown', function handler(ev) {
+      if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('pointerdown', handler); }
+    }, { once: true });
+  }, 0);
+}
 
 async function boot() {
   loadSettings();
