@@ -1,0 +1,16 @@
+{
+  "name": "wavegram-messenger",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  "forwardPorts": [3000],
+  "postCreateCommand": "npm install && (node server.js > /tmp/wavegram.log 2>&1 &)",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "files.eol": "\n"
+      }
+    }
+  }
+}
