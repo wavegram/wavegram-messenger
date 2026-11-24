@@ -1,0 +1,13 @@
+{
+  "name": "messenger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Мессенджер с нуля: Node.js + SQLite + WebSocket",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.22.1"
+  }
+}

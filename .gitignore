@@ -1,0 +1,17 @@
+# Зависимости
+/node_modules/
+
+# Базы данных и данные пользователей
+/data/
+*.db
+*.db-wal
+*.db-shm
+*.backup-*.db
+
+# Конфиги с токенами/секретами
+bot-config.json
+
+# Логи и временное
+*.log
+*.pid
+.DS_Store
