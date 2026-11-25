@@ -3,9 +3,12 @@ const path = require('node:path');
 const fs = require('node:fs');
 const http = require('node:http');
 
-const CONFIG_PATH = process.env.BOT_CONFIG || path.join(__dirname, 'bot-config.json');
+function loadConfig() {
+  if (process.env.BOT_TOKEN) return { token: process.env.BOT_TOKEN, admins: (process.env.BOT_ADMINS || '').split(',').map(s => s.trim()).filter(Boolean) };
+  try { return JSON.parse(fs.readFileSync(process.env.BOT_CONFIG || path.join(__dirname, 'bot-config.json'), 'utf8')); }
+  catch { return { token: '' }; }
+}
 const config = loadConfig();
-function loadConfig() { try { return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch { return { token: '' }; } }
 
 const TOKEN = config.token || '';
 if (!TOKEN) { console.error('[bot] Нет токена в конфиге.'); process.exit(1); }
