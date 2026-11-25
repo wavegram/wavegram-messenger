@@ -2,7 +2,11 @@
 /node_modules/
 
 # Базы данных и данные пользователей
-/data/
+/data/*
+!/data/backups/
+/data/backups/*
+!/data/backups/**/*.db
+!/data/backups/**/*.db.wal
 *.db
 *.db-wal
 *.db-shm
