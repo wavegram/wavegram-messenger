@@ -258,8 +258,14 @@
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
 
-      <div class="emoji-panel" id="emoji-panel" hidden></div>
-<div class="sticker-panel" id="sticker-panel" hidden></div>
+      <div class="emoji-panel" id="emoji-panel" hidden>
+        <div class="emoji-panel__tabs" role="tablist">
+          <button class="emoji-panel__tab is-active" type="button" data-tab="emoji" role="tab" aria-selected="true">Эмодзи</button>
+          <button class="emoji-panel__tab" type="button" data-tab="sticker" role="tab" aria-selected="false">Стикеры</button>
+        </div>
+        <div class="emoji-panel__content" data-content="emoji"></div>
+        <div class="emoji-panel__content" data-content="sticker" hidden></div>
+      </div>
 
 <form class="composer" id="composer">
         <div class="reply-bar" id="reply-bar" hidden>
@@ -282,10 +288,7 @@
 <button class="icon-btn attach-btn" id="attach-btn" type="button" aria-label="Прикрепить файл">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20.5 11.5l-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l9-9a3.5 3.5 0 0 1 5 5l-9 9a1.5 1.5 0 0 1-2.1-2.1l8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <input type="file" id="attach-input" hidden multiple>
-        <button class="icon-btn sticker-btn" id="sticker-btn" type="button" aria-label="Стикеры">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 12.5C3 7 7 3 12.5 3c3 0 5.5 1 6.5 2 1 1 2 3.5 2 6.5 0 5-4 9-9 9-1.8 0-3.4-.5-4.5-1-1.2-.6-3-1.8-4.5-3.5-.5-.6-.5-2.5-.5-3.5z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 15c2-1 4-1.5 5-1 1 .5 0 2-1.5 2.5-1 .4-2 .5-3.5 0" fill="currentColor"/><circle cx="9" cy="9" r="1.4" fill="currentColor"/><circle cx="15" cy="9" r="1.4" fill="currentColor"/></svg>
-        </button>
+<input type="file" id="attach-input" hidden multiple>
         <button class="icon-btn mic-btn" id="mic-btn" type="button" aria-label="Записать голосовое">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
@@ -366,7 +369,8 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="/app.js"></script>
+  <script src="/qrcode.js"></script>
+<script src="/app.js"></script>
 </body>
 </html>
 

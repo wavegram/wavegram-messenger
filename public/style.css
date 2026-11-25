@@ -2796,6 +2796,53 @@ html[data-theme="light"] .info-row--danger .info-row__chevron { color: #c8372f; 
   white-space: nowrap;
 }
 
+.profile-row__extra {
+  font-style: italic;
+  color: var(--text-dim);
+  margin-right: 2px;
+}
+
+.profile-row__value--unames {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.profile-row__unames {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: 2px;
+}
+
+.profile-row__uname-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft, rgba(91, 140, 255, 0.15));
+  color: var(--accent, #4f8cf5);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.profile-row__uname-link:hover { background: var(--accent-soft, rgba(91, 140, 255, 0.28)); transform: translateY(-1px); }
+.profile-row__uname-link:active { transform: scale(0.96); }
+.profile-row__uname-link .profile-row__uname-price {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: rgba(127, 127, 127, 0.14);
+  padding: 1px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
 .profile__boughtnums {
   margin-top: 18px;
   padding-top: 14px;
@@ -4186,6 +4233,364 @@ html[data-theme="light"] .info-row--danger .info-row__chevron { color: #c8372f; 
 }
 .wallet-number { font-size: 12.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 
+/* ---------- Виртуальная карта (как GRAM-карта) ---------- */
+
+.vc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 0 6px;
+  margin-bottom: 12px;
+}
+
+.vc__glow {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  height: 140px;
+  background: radial-gradient(ellipse, rgba(83, 140, 255, 0.45), transparent 70%);
+  filter: blur(18px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vc__hint {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.vc__card {
+  position: relative;
+  z-index: 1;
+  width: 320px;
+  max-width: 92%;
+  aspect-ratio: 1.586 / 1;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6ba6ff 0%, #3a6ff0 45%, #2547c4 100%);
+  box-shadow: 0 18px 40px rgba(40, 80, 220, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #fff;
+  overflow: hidden;
+}
+
+.vc__card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.18), transparent 40%),
+    radial-gradient(circle at 15% 90%, rgba(255, 255, 255, 0.1), transparent 45%);
+  pointer-events: none;
+}
+
+.vc__body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+}
+
+.vc__bal { display: flex; flex-direction: column; }
+
+.vc__coin {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 12px rgba(255, 200, 80, 0.5);
+  margin-bottom: 8px;
+}
+
+.vc__amount {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 8px rgba(0, 0, 30, 0.35);
+}
+
+.vc__usd {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vc__chip {
+  width: 40px;
+  height: 30px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #ffd97a, #f0b23e);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #6b4a00;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.vc__side {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.95;
+  white-space: nowrap;
+}
+
+.vc__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: relative;
+  padding-top: 6px;
+}
+
+.vc__lbl {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.vc__val {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.vc__valid .vc__val { letter-spacing: 0.15em; }
+
+/* ---------- QR-код ---------- */
+
+.qr-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.qr-img {
+  width: 220px;
+  height: 220px;
+  border-radius: 16px;
+  padding: 10px;
+  background: #fff;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+}
+
+.qr-url {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  word-break: break-all;
+  max-width: 300px;
+}
+
+.qr-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.qr-actions .btn { width: 100%; }
+
+/* ---------- Отправка подарка ---------- */
+
+.gift-send {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.gift-send__sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.gift-send__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.gift-send__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  border-radius: 14px;
+  padding: 12px 8px;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  transition: transform 0.12s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.gift-send__item:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.gift-send__item:active { transform: scale(0.96); }
+
+.gift-send__art {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  background: var(--bg-input);
+}
+
+.gift-send__art img { width: 100%; height: 100%; object-fit: cover; }
+
+.gift-send__name { font-size: 13.5px; font-weight: 600; }
+
+.gift-send__price {
+  font-size: 12px;
+  color: var(--text-faint);
+  background: var(--accent-soft, rgba(91, 140, 255, 0.14));
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Полноэкранный оверлей карты (как на видео) ---------- */
+
+.profile__card {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 2px;
+}
+
+.profile__balance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: linear-gradient(135deg, rgba(61, 120, 240, 0.16), rgba(61, 120, 240, 0.05));
+  border: 1px solid rgba(91, 140, 255, 0.25);
+  border-radius: 14px;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.profile__balance:hover { background: linear-gradient(135deg, rgba(61, 120, 240, 0.26), rgba(61, 120, 240, 0.1)); transform: translateY(-1px); }
+.profile__balance:active { transform: scale(0.97); }
+
+.profile__balance-coin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 10px rgba(255, 200, 60, 0.4);
+}
+
+.profile__balance-amount {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile__balance-cur {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+
+.vc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 14, 0.92);
+  backdrop-filter: blur(6px);
+  animation: vc-overlay-in 0.2s ease;
+}
+
+@keyframes vc-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vc-overlay__glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(70, 120, 255, 0.4), transparent 70%);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.vc-overlay__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.15s;
+}
+
+.vc-overlay__close:hover { background: rgba(255, 255, 255, 0.18); }
+
+.vc-overlay__hint {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  margin-bottom: 20px;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.vc-overlay .vc--standalone { margin: 0; }
+.vc--standalone .vc__card { width: 360px; max-width: 92%; }
+.vc--standalone .vc__hint { display: none; }
+
 .wallet-transfer { margin-top: 4px; }
 .wallet-transfer__head { font-size: 13px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; }
 
@@ -4379,6 +4784,42 @@ html[data-theme="light"] .info-row--danger .info-row__chevron { color: #c8372f; 
   flex: 1;
 }
 
+.emoji-panel__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.emoji-panel__tab {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.emoji-panel__tab:hover { background: var(--hover); color: var(--text); }
+
+.emoji-panel__tab.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.emoji-panel__content {
+  display: contents;
+}
+
+.emoji-panel__content[hidden] { display: none; }
+
+.emoji-panel__content[data-content="sticker"] .sticker-panel__grid {
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+}
+
 .emoji-panel__item {
   border: none;
   background: transparent;
@@ -4559,3 +5000,90 @@ html[data-theme="light"] .info-row--danger .info-row__chevron { color: #c8372f; 
   margin: -4px 0;
   cursor: pointer;
 }
+
+/* ---------- Красивые сообщения: анимация, пузыри, кнопка отправки, голосовые ---------- */
+
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.msg-row:not(.msg-row--grouped) .msg {
+  animation: msg-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.msg {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: box-shadow 0.15s, transform 0.12s;
+}
+
+.msg:hover { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22); }
+
+html[data-theme="snow"] .msg { box-shadow: 0 1px 2px rgba(20, 40, 80, 0.12); }
+html[data-theme="snow"] .msg:hover { box-shadow: 0 3px 12px rgba(20, 40, 80, 0.16); }
+
+.msg--own {
+  background: linear-gradient(135deg, #4a80f0, #3765d8);
+  color: #fff;
+}
+
+html[data-theme="snow"] .msg--own {
+  background: linear-gradient(135deg, #5b8cf5, #3f6fe3);
+  box-shadow: 0 2px 8px rgba(63, 111, 227, 0.35);
+}
+
+.msg__time { opacity: 0.85; font-size: 11px; }
+
+.msg--own .msg__time { color: rgba(255, 255, 255, 0.85); }
+
+.btn--send {
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5b8cf5, #3f6fe3);
+  box-shadow: 0 4px 14px rgba(63, 111, 227, 0.45);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+}
+
+.btn--send:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(63, 111, 227, 0.55);
+}
+
+.btn--send:active {
+  transform: translateY(1px) scale(0.94);
+  box-shadow: 0 2px 8px rgba(63, 111, 227, 0.4);
+}
+
+.btn--send svg {
+  transition: transform 0.18s;
+}
+
+.btn--send:hover svg { transform: translateX(1px); }
+
+.voice {
+  gap: 10px;
+}
+
+.voice__play {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #5b8cf5, #3f6fe3);
+  box-shadow: 0 3px 10px rgba(63, 111, 227, 0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.voice__play:hover { transform: scale(1.08); box-shadow: 0 4px 14px rgba(63, 111, 227, 0.55); }
+.voice__play:active { transform: scale(0.95); }
+
+.msg--own .voice__play { background: rgba(255, 255, 255, 0.25); box-shadow: none; }
+
+.voice__wave span {
+  background: linear-gradient(180deg, #5b8cf5, #3f6fe3);
+  border-radius: 3px;
+  opacity: 0.9;
+  transition: transform 0.1s;
+}
+
+.msg--own .voice__wave span { background: rgba(255, 255, 255, 0.95); }
+
+.msg--own .voice__length { color: rgba(255, 255, 255, 0.85); }

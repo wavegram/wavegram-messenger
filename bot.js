@@ -356,7 +356,7 @@ http.createServer((req, res) => {
         if (!who) { send({ ok: false, reason: 'владелец не найден' }); return; }
         const uid = who.telegram_id;
         const phones = getPhones.all(uid).map(r => ({ phone: r.phone, kind: r.kind, boughtAt: r.created_at, price: r.kind === 'collectible' ? ANON_PRICE_RUB : 0 }));
-        const names = db.prepare('SELECT * FROM usernames WHERE telegram_id = ? ORDER BY created_at ASC').all()
+        const names = db.prepare('SELECT * FROM usernames WHERE telegram_id = ? ORDER BY created_at ASC').all(uid)
           .map(u => ({ name: u.name, price: u.price, boughtAt: u.created_at }));
         send({ ok: true, phone, owner: uid, numbers: phones, usernames: names });
         return;

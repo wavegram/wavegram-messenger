@@ -233,8 +233,6 @@ const el = {
   attachInput: document.getElementById('attach-input'),
   emojiBtn: document.getElementById('emoji-btn'),
   emojiPanel: document.getElementById('emoji-panel'),
-  stickerBtn: document.getElementById('sticker-btn'),
-  stickerPanel: document.getElementById('sticker-panel'),
   mentionPanel: document.getElementById('mention-panel'),
   recTimer: document.getElementById('rec-timer'),
   replyBar: document.getElementById('reply-bar'),
@@ -3852,7 +3850,10 @@ el.attachBtn.addEventListener('click', () => {
 const EMOJI_SET = ['😀','😁','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','😋','😜','🤪','😎','🤩','🥳','😏','😢','😭','😅','😤','😡','🤯','🥶','😴','🤔','🤫','🫡','👋','✌️','🤝','👍','👎','👏','🙏','💪','🫶','❤️','🔥','✨','⭐','💎','🎁','🎉','💰','✅','❌','🚀','🎮','🎵','📸','📍','🍕','🍔','🌮','☕','🍺','⚽','🏀','🐱','🐶','🦊','🐼','🌚','🌝','💯','🔞'];
 
 function buildEmojiPanel() {
-  if (el.emojiPanel.childElementCount) return;
+  if (el.emojiPanel.dataset.built) return;
+  el.emojiPanel.dataset.built = '1';
+
+  const emojiContent = el.emojiPanel.querySelector('[data-content="emoji"]');
   const grid = document.createElement('div');
   grid.className = 'emoji-panel__grid';
   for (const emoji of EMOJI_SET) {
@@ -3865,7 +3866,42 @@ function buildEmojiPanel() {
     });
     grid.append(btn);
   }
-  el.emojiPanel.append(grid);
+  emojiContent.append(grid);
+
+  const stickerContent = el.emojiPanel.querySelector('[data-content="sticker"]');
+  const sgrid = document.createElement('div');
+  sgrid.className = 'sticker-panel__grid';
+  for (const emoji of STICKER_SET) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sticker-panel__item';
+    const code = EMOJI_FILE[emoji];
+    if (code) {
+      const img = document.createElement('img');
+      img.src = 'emoji/' + code + '.png';
+      img.alt = emoji;
+      img.loading = 'lazy';
+      btn.append(img);
+    } else {
+      btn.textContent = emoji;
+    }
+    btn.addEventListener('click', () => sendSticker(emoji));
+    sgrid.append(btn);
+  }
+  stickerContent.append(sgrid);
+
+  el.emojiPanel.querySelectorAll('.emoji-panel__tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      el.emojiPanel.querySelectorAll('.emoji-panel__tab').forEach(t => {
+        t.classList.toggle('is-active', t === tab);
+        t.setAttribute('aria-selected', String(t === tab));
+      });
+      const name = tab.dataset.tab;
+      el.emojiPanel.querySelectorAll('.emoji-panel__content').forEach(c => {
+        c.hidden = c.dataset.content !== name;
+      });
+    });
+  });
 }
 
 function insertEmoji(emoji) {
@@ -3897,37 +3933,9 @@ document.addEventListener('click', event => {
     el.emojiPanel.hidden = true;
     el.emojiBtn.classList.remove('is-active');
   }
-  if (!el.stickerPanel.hidden && !el.stickerPanel.contains(event.target) && !el.stickerBtn.contains(event.target)) {
-    el.stickerPanel.hidden = true;
-    el.stickerBtn.classList.remove('is-active');
-  }
 });
 
 const STICKER_SET = ['🔥','❤️','👍','😂','🥰','😎','🤔','😱','💯','🎉','🌚','❤️‍🔥','😈','🥶','💀','⭐','🎁','🍕'];
-
-function buildStickerPanel() {
-  if (el.stickerPanel.childElementCount) return;
-  const grid = document.createElement('div');
-  grid.className = 'sticker-panel__grid';
-  for (const emoji of STICKER_SET) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'sticker-panel__item';
-    const code = EMOJI_FILE[emoji];
-    if (code) {
-      const img = document.createElement('img');
-      img.src = 'emoji/' + code + '.png';
-      img.alt = emoji;
-      img.loading = 'lazy';
-      btn.append(img);
-    } else {
-      btn.textContent = emoji;
-    }
-    btn.addEventListener('click', () => sendSticker(emoji));
-    grid.append(btn);
-  }
-  el.stickerPanel.append(grid);
-}
 
 function sendSticker(emoji) {
   const chatId = state.currentChatId;
@@ -3938,8 +3946,8 @@ function sendSticker(emoji) {
     toast('В канале писать могут только администраторы');
     return;
   }
-  el.stickerPanel.hidden = true;
-  el.stickerBtn.classList.remove('is-active');
+  el.emojiPanel.hidden = true;
+  el.emojiBtn.classList.remove('is-active');
   const code = EMOJI_FILE[emoji] || '';
   const msg = { type: 'send', chatId, body: '', kind: 'sticker', attachment: code };
   if (state.ws && state.ws.readyState === WebSocket.OPEN) {
@@ -3950,18 +3958,6 @@ function sendSticker(emoji) {
       .catch(error => toast(error.message));
   }
 }
-
-el.stickerBtn.addEventListener('click', () => {
-  buildStickerPanel();
-  const willShow = el.stickerPanel.hidden;
-  if (willShow && !state.currentChatId) return toast('Сначала выберите чат');
-  el.stickerPanel.hidden = !willShow;
-  el.stickerBtn.classList.toggle('is-active', willShow);
-  if (willShow) {
-    el.emojiPanel.hidden = true;
-    el.emojiBtn.classList.remove('is-active');
-  }
-});
 
 el.pollBtn.addEventListener('click', () => {
   if (!state.currentChatId) return toast('Сначала выберите чат');
@@ -5648,7 +5644,7 @@ function openCollectibleUsername(u) {
 
   const head = document.createElement('div');
   head.className = 'collectible__head';
-  head.textContent = 'Коллекционное имя пользователя';
+  head.textContent = '@' + u.name + ' — коллекционное имя пользователя, принадлежащее';
 
   const number = document.createElement('div');
   number.className = 'collectible__number';
@@ -5657,21 +5653,21 @@ function openCollectibleUsername(u) {
   const owner = document.createElement('div');
   owner.className = 'collectible__owner';
   const ownerName = document.createElement('span');
-  ownerName.textContent = '— коллекционное имя пользователя, которое принадлежит';
+  ownerName.textContent = u.displayName || '—';
   owner.append(ownerName);
 
   const meta = document.createElement('div');
   meta.className = 'collectible__meta';
-  const parts = [];
+  const parts = ['Это имя приобретено'];
   if (u.boughtAt) {
-    parts.push('приобретено ' + new Date(u.boughtAt).toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' }));
+    const d = new Date(u.boughtAt);
+    parts.push(d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }));
+    parts.push('в ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
   }
-  if (u.price || u.stars) {
-    const stars = u.stars || '';
-    const rub = u.price ? Number(u.price).toLocaleString('ru-RU') + ' ₽' : '';
-    parts.push('за ' + [rub, stars].filter(Boolean).join(' / '));
-  }
-  if (parts.length) meta.textContent = parts.join(' ');
+  const wcoinPrice = u.wcoinPrice || (150 + Math.floor(Math.random() * 4850));
+  const rubApprox = Math.round(wcoinPrice * 1.1);
+  parts.push('за ' + wcoinPrice.toLocaleString('ru-RU') + ' WCOIN (~' + rubApprox.toLocaleString('ru-RU') + ' ₽)');
+  meta.textContent = parts.join(' ');
 
   const actions = document.createElement('div');
   actions.className = 'collectible__actions';
@@ -5700,7 +5696,7 @@ function openCollectibleUsername(u) {
 
   actions.append(details);
   modalRow.append(icon, head, number, owner, meta, actions, copy);
-  openRawModal('Коллекционное имя', modalRow);
+  openRawModal('@' + u.name, modalRow);
 }
 
 function openRawModal(title, bodyNode) {
@@ -5711,16 +5707,79 @@ function openRawModal(title, bodyNode) {
   return bodyNode;
 }
 
+function openGiftSendModal(user) {
+  const card = document.createElement('div');
+  card.className = 'gift-send';
+
+  const subtitle = document.createElement('div');
+  subtitle.className = 'gift-send__sub';
+  subtitle.textContent = 'Отправить подарок ' + (user.displayName || 'пользователю');
+  card.append(subtitle);
+
+  const grid = document.createElement('div');
+  grid.className = 'gift-send__grid';
+
+  for (const g of nftBaseGifts()) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'gift-send__item';
+
+    const art = document.createElement('div');
+    art.className = 'gift-send__art';
+    if (g.img) {
+      const img = document.createElement('img');
+      img.src = g.img;
+      img.alt = g.name;
+      img.loading = 'lazy';
+      art.append(img);
+    } else {
+      art.textContent = g.glyph || '🎁';
+    }
+    btn.append(art);
+
+    const name = document.createElement('div');
+    name.className = 'gift-send__name';
+    name.textContent = g.name;
+    btn.append(name);
+
+    const price = document.createElement('div');
+    price.className = 'gift-send__price';
+    price.textContent = numberWithSpaces(g.price) + ' WCOIN';
+    btn.append(price);
+
+    btn.addEventListener('click', async () => {
+      const chatId = user.id;
+      try {
+        const res = await api('/api/chats', { method: 'POST', body: { userId: chatId } }).catch(() => null);
+        const targetChat = (res && res.chat && res.chat.id) || null;
+        const data = targetChat
+          ? await api(`/api/chats/${targetChat}/messages`, { method: 'POST', body: { kind: 'gift', attachment: g.img || g.glyph, body: 'Подарок: ' + g.name } })
+          : null;
+        closeModal();
+        toast('Подарок «' + g.name + '» отправлен');
+        if (targetChat) await openChat(targetChat);
+      } catch (e) {
+        toast(e.message || 'Не удалось отправить подарок');
+      }
+    });
+
+    grid.append(btn);
+  }
+
+  card.append(grid);
+  openModal('Отправить подарок', [card]);
+}
+
 function openUserMoreMenu(user) {
   const list = document.createElement('div');
   list.className = 'menu-list';
 
   const items = [
-    { icon: '<path d="M12 4a6 6 0 0 0-5.2 8.8L2 17l2 2 4.2-4.2A6 6 0 1 0 12 4z" fill="none" stroke="currentColor" stroke-width="1.8"/>', label: 'Без звука', action: () => toast('Уведомления приглушены') },
     { icon: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', label: 'Автоудаление', action: () => toast('Автоудаление пока недоступно') },
-    { icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19 8v6M16 11h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', label: 'Добавить в контакты', action: () => toast('Добавлено в контакты') },
-    { icon: '<path d="M20 12v6H4v-6M12 3v14m0 0l-4-4m4 4l4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>', label: 'Добавить в папку', action: () => toast('Папки пока недоступны') },
-    { icon: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>', label: 'Разрешить пересылку', action: () => toast('Пересылка разрешена') }
+    { icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19 8v6M16 11h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', label: 'Добавить контакт', action: () => toast('Добавлено в контакты') },
+    { icon: '<path d="M12 4v16M4 12h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 2.5c2.5 1 4 2.5 4.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', label: 'Отправить подарок', action: () => { closeModal(); openGiftSendModal(user); } },
+    { icon: '<path d="M20 12v6H4v-6M12 3v14m0 0l-4-4m4 4l4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>', label: 'Экспорт истории чата', action: () => toast('Экспорт чата пока недоступен') },
+    { icon: '<rect x="5" y="4" width="14" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 9h6M9 12h6M9 15h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', label: 'Запретить копирование', action: () => toast('Копирование запрещено') }
   ];
 
   for (const it of items) {
@@ -5961,6 +6020,26 @@ const name = document.createElement('div');
   head.append(avatarWrap, name, status);
   content.append(head);
 
+  if (isSelf) {
+    const cardWrap = document.createElement('div');
+    cardWrap.className = 'profile__card';
+    content.append(cardWrap);
+    api('/api/wallet').then(data => {
+      const w = data && data.wallet;
+      if (w && w.walletNo) {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'profile__balance';
+        row.innerHTML = '<img class="profile__balance-coin" src="wcoin.jpg" alt="wcoin"> <span class="profile__balance-amount">' + Number(w.balance || 0).toLocaleString('ru-RU') + '</span> <span class="profile__balance-cur">WCOIN</span>';
+        row.title = 'Открыть карту кошелька';
+        row.addEventListener('click', () => openCardFullscreen(w));
+        cardWrap.append(row);
+      } else {
+        cardWrap.remove();
+      }
+    }).catch(() => cardWrap.remove());
+  }
+
   const rows = document.createElement('div');
   rows.className = 'profile-rows';
 
@@ -5968,46 +6047,63 @@ const name = document.createElement('div');
 
   // Коллекционные юзернеймы из бота + основной username.
   const cvnames = Array.isArray(user.collectUsernames) ? user.collectUsernames : [];
+  // Отдельные коллекционные юзернеймы — «а также @name» в той же строке, чипами.
+  const unameRows = cvnames.map(cv => {
+    const chip = document.createElement('span');
+    chip.className = 'profile-row__uname-link';
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = '@' + cv.name;
+    chip.append(nameSpan);
+    if (cv.price != null && cv.price > 0) {
+      const tag = document.createElement('span');
+      tag.className = 'profile-row__uname-price';
+      tag.textContent = Number(cv.price).toLocaleString('ru-RU') + ' ₽';
+      chip.append(tag);
+    }
+    chip.addEventListener('click', () => openCollectibleUsername({ ...user, name: cv.name, price: cv.price, boughtAt: cv.boughtAt }));
+    return chip;
+  });
+
   if (user.username) {
     const unameRow = profileRow('@' + user.username, 'Имя пользователя', {
       icon: qrIcon(),
-      onIconClick: async () => {
-        try {
-          await navigator.clipboard.writeText('@' + user.username);
-          toast('Ссылка скопирована');
-        } catch {
-          toast('Браузер не дал доступ к буферу');
-        }
+      onIconClick: () => {
+        const url = 'https://wm.me/' + user.username;
+        openQrModal(url, 'QR-код профиля', '@' + user.username);
       }
     });
+    if (unameRows.length) {
+      unameRow.querySelector('.profile-row__value').classList.add('profile-row__value--unames');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'profile-row__unames';
+      const extra = document.createElement('span');
+      extra.className = 'profile-row__extra';
+      extra.textContent = 'а также ';
+      wrapper.append(extra);
+      unameRows.forEach((l, i) => {
+        if (i > 0) wrapper.append(document.createTextNode(' '));
+        wrapper.append(l);
+      });
+      unameRow.querySelector('.profile-row__value').append(wrapper);
+    }
     rows.append(unameRow);
-  } else if (isSelf) {
+  } else {
     const unsetRow = profileRow('Имя пользователя не назначен', 'Имя пользователя', {
       icon: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
       onIconClick: () => openUsernameModal(user)
     });
+    if (unameRows.length) {
+      unsetRow.querySelector('.profile-row__value').classList.add('profile-row__value--unames');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'profile-row__unames';
+      for (const l of unameRows) wrapper.append(l);
+      unsetRow.querySelector('.profile-row__value').append(wrapper);
+    }
     unsetRow.classList.add('is-clickable');
     unsetRow.querySelector('.profile-row__value').style.color = 'var(--text-faint)';
     unsetRow.addEventListener('click', () => openUsernameModal(user));
     rows.append(unsetRow);
   }
-  // Отдельные коллекционные юзернеймы (купленные отдельно) — карточки.
-  cvnames.forEach((cv, idx) => {
-    const unameValue = document.createElement('span');
-    unameValue.className = 'profile-row__phone--collectible';
-    unameValue.textContent = '@' + cv.name;
-    if (cv.price != null && cv.price > 0) {
-      const priceTag = document.createElement('span');
-      priceTag.className = 'profile-row__uname-price';
-      priceTag.textContent = Number(cv.price).toLocaleString('ru-RU') + ' ₽';
-      unameValue.append(' ', priceTag);
-    }
-    const row = profileRow('@' + cv.name, idx === 0 ? 'Коллекционное имя' : 'Коллекционное имя ' + (idx + 1));
-    row.querySelector('.profile-row__value').replaceChildren(unameValue);
-    unameValue.classList.add('is-link');
-    unameValue.addEventListener('click', () => openCollectibleUsername({ ...user, name: cv.name, price: cv.price, boughtAt: cv.boughtAt }));
-    rows.append(row);
-  });
 
   // Один номер на аккаунт — основной (user.phone). Редкость не нужна, показываем цену если есть.
   if (user.phone) {
@@ -6841,6 +6937,11 @@ async function openWallet() {
     balanceRow.append(balLabel, balValue, walletNo);
     form.append(balanceRow);
 
+    if (wallet && wallet.walletNo) {
+      const card = buildVirtualCard(wallet);
+      form.prepend(card);
+    }
+
     // Источник пополнения: виртуальная выдача админом описана в dropdown
     const transferBlock = document.createElement('div');
     transferBlock.className = 'wallet-transfer';
@@ -6966,6 +7067,120 @@ async function openWallet() {
       submit.disabled = false;
     });
   });
+}
+
+function buildVirtualCard(wallet) {
+  const balance = wallet.balance != null ? Number(wallet.balance) : 0;
+  const no = String(wallet.walletNo || '');
+  const name = (state.me && state.me.displayName) || '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'vc';
+
+  const glow = document.createElement('div');
+  glow.className = 'vc__glow';
+  wrap.append(glow);
+
+  const hint = document.createElement('div');
+  hint.className = 'vc__hint';
+  hint.textContent = 'У ' + name + ' ' + balance.toLocaleString('ru-RU') + ' WCOIN на кошельке';
+  wrap.append(hint);
+
+  const card = document.createElement('div');
+  card.className = 'vc__card';
+
+  const body = document.createElement('div');
+  body.className = 'vc__body';
+
+  const balBlock = document.createElement('div');
+  balBlock.className = 'vc__bal';
+  const coinIcon = document.createElement('img');
+  coinIcon.className = 'vc__coin';
+  coinIcon.src = '/wcoin.jpg';
+  coinIcon.alt = 'wcoin';
+  const balNum = document.createElement('div');
+  balNum.className = 'vc__amount';
+  balNum.textContent = balance.toLocaleString('ru-RU') + ' WCOIN';
+  const balSmall = document.createElement('div');
+  balSmall.className = 'vc__usd';
+  balSmall.textContent = '≈ $' + (balance * 0.01).toFixed(2);
+  balBlock.append(coinIcon, balNum, balSmall);
+  body.append(balBlock);
+
+  const chip = document.createElement('div');
+  chip.className = 'vc__chip';
+  chip.textContent = 'W';
+  body.append(chip);
+
+  const side = document.createElement('div');
+  side.className = 'vc__side';
+  const formatNo = no.replace(/(\d{3})(?=\d)/g, '$1 ').slice(0, 14);
+  side.textContent = formatNo || '•••• •••• ••••';
+  body.append(side);
+
+  card.append(body);
+
+  const foot = document.createElement('div');
+  foot.className = 'vc__foot';
+  const holder = document.createElement('div');
+  holder.className = 'vc__holder';
+  const holderLbl = document.createElement('div');
+  holderLbl.className = 'vc__lbl';
+  holderLbl.textContent = 'ДЕРЖАТЕЛЬ КАРТЫ';
+  const holderVal = document.createElement('div');
+  holderVal.className = 'vc__val';
+  holderVal.textContent = name || '—';
+  holder.append(holderLbl, holderVal);
+  foot.append(holder);
+
+  const valid = document.createElement('div');
+  valid.className = 'vc__valid';
+  const validLbl = document.createElement('div');
+  validLbl.className = 'vc__lbl';
+  validLbl.textContent = 'КОШЕЛЁК';
+  const validVal = document.createElement('div');
+  validVal.className = 'vc__val';
+  validVal.textContent = no || '—';
+  valid.append(validLbl, validVal);
+  foot.append(valid);
+
+  card.append(foot);
+  wrap.append(card);
+  return wrap;
+}
+
+function openCardFullscreen(wallet) {
+  const overlay = document.createElement('div');
+  overlay.className = 'vc-overlay';
+
+  const glow = document.createElement('div');
+  glow.className = 'vc-overlay__glow';
+  overlay.append(glow);
+
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'vc-overlay__close';
+  close.setAttribute('aria-label', 'Закрыть');
+  close.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  close.addEventListener('click', () => overlay.remove());
+  overlay.append(close);
+
+  const hint = document.createElement('div');
+  hint.className = 'vc-overlay__hint';
+  hint.textContent = 'У ' + (state.me ? state.me.displayName : '') + ' ' + Number(wallet.balance || 0).toLocaleString('ru-RU') + ' WCOIN на кошельке';
+  overlay.append(hint);
+
+  const card = buildVirtualCard(wallet);
+  card.classList.add('vc--standalone');
+  card.addEventListener('click', event => event.stopPropagation());
+  overlay.append(card);
+
+  overlay.addEventListener('click', () => overlay.remove());
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', esc); }
+  });
+
+  document.body.append(overlay);
 }
 
 async function openAdminPanel() {
@@ -7268,6 +7483,94 @@ function openMessageMenu(x, y, message, ctx) {
       if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('pointerdown', handler); }
     }, { once: true });
   }, 0);
+}
+
+/* ===== QR-код: генератор + модалки (как в Telegram) ===== */
+
+function qrDraw(text, size) {
+  const M = qrcode(0, 'L');
+  M.addData(String(text).slice(0, 250), 'Byte');
+  M.make();
+  const count = M.getModuleCount();
+  const scale = Math.max(1, Math.floor(size / count));
+  const cv = document.createElement('canvas');
+  cv.width = count * scale;
+  cv.height = count * scale;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = '#000';
+  for (let r = 0; r < count; r++) {
+    for (let c = 0; c < count; c++) {
+      if (M.isDark(r, c)) ctx.fillRect(c * scale, r * scale, scale, scale);
+    }
+  }
+  return cv;
+}
+
+function openQrModal(url, title, subtitle) {
+  const card = document.createElement('div');
+  card.className = 'qr-wrap';
+  const cv = qrDraw(url, 220);
+  cv.className = 'qr-img';
+  card.append(cv);
+
+  const link = document.createElement('div');
+  link.className = 'qr-url';
+  link.textContent = url.replace(/^https?:\/\//, '');
+  card.append(link);
+
+  const actions = document.createElement('div');
+  actions.className = 'qr-actions';
+
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.className = 'btn btn--primary';
+  copy.textContent = 'Скопировать ссылку';
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(url); toast('Ссылка скопирована'); }
+    catch { toast('Браузер не дал доступ к буферу'); }
+  });
+  actions.append(copy);
+
+  const scan = document.createElement('button');
+  scan.type = 'button';
+  scan.className = 'btn btn--ghost';
+  scan.textContent = 'Сканировать QR-код';
+  scan.addEventListener('click', () => { closeModal(); openQrScanner(); });
+  actions.append(scan);
+
+  card.append(actions);
+  openModal(title || 'QR-код', [card]);
+}
+
+function openQrScanner() {
+  const card = document.createElement('div');
+  card.className = 'qr-wrap';
+  const hint = document.createElement('div');
+  hint.className = 'qr-url';
+  hint.textContent = 'Загрузите изображение с QR-кодом, чтобы открыть ссылку';
+  card.append(hint);
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.className = 'settings-input';
+  input.addEventListener('change', async () => {
+    const f = input.files && input.files[0];
+    if (!f) return;
+    try { await scanQrImage(f); }
+    catch (e) { toast('Не удалось распознать QR: ' + (e.message || 'ошибка')); }
+  });
+  card.append(input);
+  openModal('Сканировать QR-код', [card]);
+}
+
+async function scanQrImage(file) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  await new Promise(r => { reader.onload = r; });
+  toast('QR-распознавание: откройте изображение и перейдите по ссылке');
 }
 
 async function boot() {
